@@ -1,145 +1,164 @@
-if (!window.dash_clientside) {
-    window.dash_clientside = {}
-}
+window.dash_clientside = Object.assign({}, window.dash_clientside,
+	{
+    clientside: {
+        display_table_name_tap_node:
+			function(node) {
+                if (node === undefined) {
+                    return '';
+                }
+                return node['data']['id'];
+        },
+        display_table_schema_tap_node:
+			function(node, store) {
+                if (node === undefined) {
+                    return '';
+                }
+                let schema = store['schema'];
+            	return JSON.stringify(schema[node['data']['id']], null,2);
+        },
+        highlight_adjacent_nodes_tap_node:
+			function(node, store) {
+                let stylesheet_dict = store['stylesheet'];
+                if (node === undefined) {
+                    return stylesheet_dict['default_stylesheet'];
+                }
+
+                let follower_color = "#0074D9";
+                let following_color = "#FF4136";
+                let font_size = 88;
 
 
+                let stylesheet = [
+                    {
+                        "selector": 'node',
+                        'style': {
+                            'opacity': 0.3,
+                            'font-size': stylesheet_dict['default_font_size_mapping'],
+                            "width": stylesheet_dict['default_node_size_mapping'],
+                            "height": stylesheet_dict['default_node_size_mapping'],
+                            'label': 'data(id)',
+                            'color': 'white',
+                        }
+                    },
+                    {
+                        'selector': 'edge',
+                        'style': {
+                            'width': stylesheet_dict['default_edge_width'],
+                            'opacity': 0.2,
+                            'curve-style': 'bezier',
+                            'line-color': '#555555',
+                            'target-arrow-color': '#999999',
+                            'target-arrow-shape': 'triangle',
+                            //'source-arrow-size': 15,
+                        }
+                    },
+                    {
+                        "selector": `node[id = "${node['data']['id']}"]`,
+                        "style": {
+                            'background-color': 'purple',
+                            "opacity": 1,
+                            "border-color": "white",
+                            "border-width": 2,
+                            "border-opacity": 1,
 
-window.dash_clientside.clientside3 = {
-    update_table: function(clickdata, selecteddata, table_data, selectedrows, store) {
-	/**
-	 * Update selected rows in table when clicking or selecting in map
-	 * chart
-	 *
-	 * Parameters
-	 * ----------
-	 *
-	 * clickdata: object (dict)
-	 *     clicked points
-	 * selected: object (dict)
-	 *     box-selected points
-	 * table_data: list of dict
-	 *     data of the table
-	 * selectedrows: list of indices
-	 *     list of selected countries to be updated
-	 * store: list
-	 *     store[1] is the list of countries to be used when initializing
-	 *     the app
-	 */
-    	if ((!selecteddata) && (!clickdata)) {
-	    // this is only visited when initializing the app
-	    // we use a pre-defined list of indices
-	    return store[1];
-        }
-	if (!selectedrows) {
-	    selectedrows = [];
-	}
-	var ids = [...selectedrows];
+                            "label": "data(label)",
+                            'font-size': font_size,
+                            "text-opacity": 1,
+                            'color': 'purple',
+                            'text-outline-color': 'white',
+                            'text-outline-width': 1,
+                            'z-index': 9999
+                        }
+                    }
+                ];
 
-	var countries = [];
-	if (clickdata) {
-	    var country = clickdata['points'][0]['customdata'][0];
-	    countries.push(country);
-	}
-	if (selecteddata) {
-	    var countries = [];
-		for (i = 0; i < selecteddata['points'].length; i++) {
-		    countries.push(selecteddata['points'][i]['customdata'][0]);
-	    }
-	}
-	for (i = 0; i < countries.length; i++) {
-	    for (j = 0; j < table_data.length; j++) {
-		if (countries[i] == table_data[j]["country_region"]) {
-		    if (selectedrows.includes(j)){
-			var index = ids.indexOf(j);
-			ids.splice(index, 1);
-			}
-		    else{
-			ids.push(j);
-		    }
-		}
-	    }
-	}
-	return ids;
+                for (const edge of node['edgesData']){
+                    if (edge['source'] === node['data']['id'] && edge['target'] === node['data']['id'] ){
+                        stylesheet.push({
+                            "selector": `edge[id= "${edge['id']}"]`,
+                            "style": {
+                                'width': stylesheet_dict['default_edge_width'] * 2,
+
+                                // 'curve-style': 'unbundled-bezier',
+                                // "control-point-distances": 120,
+                                // "control-point-weights": 1,
+                                // 'loop-direction': -30,
+                                // 'loop-sweep': -30,
+
+                                'target-arrow-color': 'purple',
+                                'target-arrow-shape': 'triangle',
+                                "mid-target-arrow-color": 'purple',
+                                "mid-target-arrow-shape": "vee",
+                                "line-color": 'purple',
+                                'opacity': 1,
+                                'z-index': 100500
+                            }
+                        });
+                        continue;
+                    }
+                    if(edge['source'] === node['data']['id']){
+                        stylesheet.push({
+                            "selector": `node[id = "${edge['target']}"]`,
+                            "style": {
+                                'color': following_color,
+                                'font-size': font_size,
+                                'text-outline-color': '#EEEEEE',
+                                'text-outline-width': 1,
+                                'background-color': following_color,
+                                'opacity': 0.9,
+                                "border-color": "white",
+                                "border-width": 2,
+                                "border-opacity": 1,
+                            }
+                        })
+                        stylesheet.push({
+                            "selector": `edge[id= "${edge['id']}"]`,
+                            "style": {
+                                'width': stylesheet_dict['default_edge_width'],
+                                'target-arrow-color': following_color,
+                                'target-arrow-shape': 'triangle',
+                                "mid-target-arrow-color": following_color,
+                                "mid-target-arrow-shape": "vee",
+                                "line-color": following_color,
+                                'opacity': 0.8,
+                                'z-index': 5000
+                            }
+                        })
+                    }
+
+                    if (edge['target'] === node['data']['id']) {
+                        stylesheet.push({
+                            "selector": `node[id = "${edge['source']}"]`,
+                            "style": {
+                                'color': follower_color,
+                                'font-size': font_size,
+                                'text-outline-color': '#EEEEEE',
+                                'text-outline-width': 1,
+                                'background-color': follower_color,
+                                'opacity': 0.9,
+                                "border-color": "white",
+                                "border-width": 2,
+                                "border-opacity": 1,
+                                'z-index': 9999
+                            }
+                        })
+                        stylesheet.push({
+                            "selector": `edge[id= "${edge['id']}"]`,
+                            "style": {
+                                'width': stylesheet_dict['default_edge_width'],
+                                'target-arrow-color': follower_color,
+                                'target-arrow-shape': 'triangle',
+                                "mid-target-arrow-color": follower_color,
+                                "mid-target-arrow-shape": "vee",
+                                "line-color": follower_color,
+                                'opacity': 0.8,
+                                'z-index': 5000
+                            }
+                        })
+                    }
+                }
+                return stylesheet;
+        },
+
     }
-};
-
-    
-window.dash_clientside.clientside = {
-    update_store_data: function(rows, selectedrows, cases_type, log_or_lin, store) {
-	/**
-	 * Update timeseries figure when selected countries change,
-	 * or type of cases (active cases or fatalities)
-	 *
-	 * Parameters
-	 * ----------
-	 *
-	 *  rows: list of dicts
-	 *	data of the table
-	 *  selectedrows: list of indices
-	 *	indices of selected countries
-	 *  cases_type: str
-	 *	active or death
-	 *  log_or_lin: str
-	 *	log or linear axis
-	 *  store: list
-	 *	store[0]: plotly-figure-dict, containing all the traces (all
-	 *	countries, data and prediction, for active cases and deaths)
-	 *	store[1]: list of countries to be used at initialization
-	 */
-	var fig = store[0];
-	if (!rows) {
-           throw "Figure data not loaded, aborting update."
-       }
-	var new_fig = {};
-	new_fig['data'] = [];
-	new_fig['layout'] = fig['layout'];
-	var countries = [];
-	var max = 100;
-	var max_data = 0;
-	for (i = 0; i < selectedrows.length; i++) {
-	    countries.push(rows[selectedrows[i]]["country_region"]);
-	}
-	if (cases_type === 'active'){
-	    new_fig['layout']['annotations'][0]['visible'] = false;
-	    new_fig['layout']['annotations'][1]['visible'] = true;
-	    for (i = 0; i < fig['data'].length; i++) {
-		var name = fig['data'][i]['name'];
-		if (countries.includes(name) || countries.includes(name.substring(1))){
-		    new_fig['data'].push(fig['data'][i]);
-		    max_data = Math.max(...fig['data'][i]['y']);
-		    if (max_data > max){
-			max = max_data;
-		    }
-		}
-	    }
-	}
-	else{
-	    new_fig['layout']['annotations'][0]['visible'] = true;
-	    new_fig['layout']['annotations'][1]['visible'] = false;
-	    for (i = 0; i < fig['data'].length; i++) {
-		var name = fig['data'][i]['name'];
-		if (countries.includes(name.substring(2))){
-		    new_fig['data'].push(fig['data'][i]);
-		    max_data = Math.max(...fig['data'][i]['y']);
-		    if (max_data > max){
-			max = max_data;
-		    }
-		}
-	    }
-	}
-	new_fig['layout']['yaxis']['type'] = log_or_lin;
-	if (log_or_lin === 'log'){
-	    new_fig['layout']['legend']['x'] = .65;
-	    new_fig['layout']['legend']['y'] = .1;
-	    new_fig['layout']['yaxis']['range'] = [1.2, Math.log10(max)];
-	    new_fig['layout']['yaxis']['autorange'] = false;
-	}
-	else{
-	    new_fig['layout']['legend']['x'] = .05;
-	    new_fig['layout']['legend']['y'] = .8;
-	    new_fig['layout']['yaxis']['autorange'] = true;
-	}
-        return new_fig;
-    }
-};
-
+});
