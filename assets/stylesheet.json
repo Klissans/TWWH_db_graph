@@ -1,0 +1,5 @@
+{
+  "default_edge_width": 10,
+  "default_font_size_mapping": "mapData(degree, 0, 50, 55, 99)",
+  "default_node_size_mapping": "mapData(degree, 0, 70, 50, 100)"
+}
