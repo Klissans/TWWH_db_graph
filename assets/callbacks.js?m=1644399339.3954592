@@ -12,13 +12,13 @@ function openTab(event, tab_id){
 }
 
 
-window.onload = function () {
+window.onload = setTimeout(function() {
     let tablinks = document.getElementsByClassName('tablinks');
     for (let i=0; i< tablinks.length; i++){
         let idd = tablinks[i].textContent.toLowerCase() + '-tab';
         tablinks[i].onclick = () => {openTab(event, idd)};
     }
-};
+}, 5000);
 
 
 
