@@ -57,6 +57,18 @@ default_stylesheet = [
 stylesheet_params['default_stylesheet'] = default_stylesheet
 
 styles = {
+    'search-output': {
+        'position': 'fixed',
+        'overflow-y': 'scroll',
+        'width': '32%',
+        'height': '92%',
+        # 'min-height': '1000px',
+        # 'max-height': '99%',
+        'border': 'thin lightgrey solid',
+    },
+    'found-table-button': {
+        'width': 'calc(100%)'
+    },
     'json-output': {
         'overflow-y': 'scroll',
         'height': 'calc(100% - 25px)',
@@ -82,61 +94,83 @@ layout = html.Div([
             },
             style={
                 'width': '100%',
-                'height': '95vh',
+                'height': '99vh',
                 'background': '#000000',
             }
         )
     ]),
 
     html.Div(className='four columns', children=[
-        dcc.Tabs(id='tabs', children=[
-            dcc.Tab(label='Schema', children=[
-                html.Div(style=styles['tab'], children=[
-                    html.P('', id='schema-name'),
-                    html.Pre(
-                        id='tap-node-json-output',
-                        style=styles['json-output']
-                    )
-                ])
-            ])
+        html.Div(className='tab', children=[
+            html.Button('Search', className='tablinks',),
+            html.Button('Schema', className='tablinks'),
+            html.Button('References', className='tablinks'),
+        ]),
+
+        html.Div(className='tabcontent', id='search-tab', children=[
+            html.Div(style={'width': '50%', 'display': 'inline'}, children=[
+                'Table Name: ',
+                dcc.Input(id='input-search-table-name', type='text')
+            ]),
+            html.Div(id='found-tables', style=styles['search-output'])
+        ]),
+
+        html.Div(className='tabcontent', id='schema-tab', style={'display': 'none'}, children=[
+            html.H3('', id='schema-name'),
+            html.Div(id='table-fields', style=styles['search-output'])
+        ]),
+
+        html.Div(className='tabcontent', style={'display': 'none'}, id='references-tab', children=[
+            html.Div(id='key-references', style=styles['search-output'])
         ]),
     ])
 ])
 
-
-app = dash.Dash(__name__)
-app.layout = layout
-
-
-app.clientside_callback(
-    ClientsideFunction(
-        namespace='clientside',
-        function_name='display_table_schema_tap_node'
-    ),
-    output=Output('tap-node-json-output', 'children'),
-    inputs=[Input('cytoscape', 'tapNode')],
-    state=[State('store', 'data')]
-)
-
-app.clientside_callback(
-    ClientsideFunction(
-        namespace='clientside',
-        function_name='display_table_name_tap_node'
-    ),
-    output=Output('schema-name', 'children'),
-    inputs=[Input('cytoscape', 'tapNode')]
-)
-
-app.clientside_callback(
-    ClientsideFunction(
-        namespace='clientside',
-        function_name='highlight_adjacent_nodes_tap_node'
-    ),
-    output=Output('cytoscape', 'stylesheet'),
-    inputs=[Input('cytoscape', 'tapNode')],
-    state=[State('store', 'data')]
-)
-
+external_stylesheets = [
+                        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
+                       ]
 
 if __name__ == '__main__':
+    app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+    app.layout = layout
+
+    app.clientside_callback(
+        ClientsideFunction(
+            namespace='clientside',
+            function_name='display_table_schema_tap_node'
+        ),
+        output=Output('table-fields', 'children'),
+        inputs=[Input('cytoscape', 'tapNode')],
+        state=[State('store', 'data')]
+    )
+
+    app.clientside_callback(
+        ClientsideFunction(
+            namespace='clientside',
+            function_name='display_table_name_tap_node'
+        ),
+        output=Output('schema-name', 'children'),
+        inputs=[Input('cytoscape', 'tapNode')]
+    )
+
+    app.clientside_callback(
+        ClientsideFunction(
+            namespace='clientside',
+            function_name='highlight_adjacent_nodes_tap_node'
+        ),
+        output=Output('cytoscape', 'stylesheet'),
+        inputs=[Input('cytoscape', 'tapNode')],
+        state=[State('store', 'data')]
+    )
+
+    app.clientside_callback(
+        ClientsideFunction(
+            namespace='clientside',
+            function_name='search_tables_by_name'
+        ),
+        output=Output('found-tables', 'children'),
+        inputs=[Input('input-search-table-name', 'value')],
+        state=[State('store', 'data')]
+    )
+
     app.run_server(debug=False)
