@@ -39,7 +39,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside,
                 if (node === undefined) {
                     return null;
                 }
-                let schema = store['schema'][node['data']['id']]['schema'];
+                let schema = store['schema'][node['data']['id']];
                 schema['fields'].sort((a, b) => {return a['ca_order'] - b['ca_order']})
 
                 let fields_div = document.getElementById('table-fields');
